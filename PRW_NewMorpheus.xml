@@ -1,0 +1,138 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="5">
+    <Description>
+        <Details></Details>
+        <Title></Title>
+    </Description>
+    <Space>
+        <Lattice class="square">
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <Size value="400, 400, 0.0" symbol="size"/>
+            <BoundaryConditions>
+                <Condition type="periodic" boundary="x"/>
+                <Condition type="periodic" boundary="y"/>
+            </BoundaryConditions>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="1000"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <Analysis>
+        <Gnuplotter time-step="100.000" decorate="false">
+            <Plot>
+                <Cells min="0">
+                    <ColorMap>
+                        <Color value="0" color="red"/>
+                        <Color value="2" color="red"/>
+                    </ColorMap>
+                </Cells>
+                <CellArrows orientation="5*move_dir"/>
+            </Plot>
+            <Terminal name="png"/>
+        </Gnuplotter>
+        <Logger time-step="1.0">
+            <Input>
+                <Symbol symbol-ref="cell.center.x"/>
+                <Symbol symbol-ref="cell.center.y"/>
+                <Symbol symbol-ref="Test_RN"/>
+                <Symbol symbol-ref="angle"/>
+            </Input>
+            <Output>
+                <TextOutput/>
+            </Output>
+            <Plots>
+                <Plot>
+                    <Style style="points"/>
+                    <Terminal terminal="png"/>
+                    <X-axis>
+                        <Symbol symbol-ref="time"/>
+                    </X-axis>
+                    <Y-axis>
+                        <Symbol symbol-ref="Test_RN"/>
+                    </Y-axis>
+                </Plot>
+            </Plots>
+        </Logger>
+    </Analysis>
+    <Global>
+        <Constant value="0.0" symbol="dummy"/>
+        <Constant value="200" symbol="target_vol"/>
+        <!--    <Disabled>
+        <Variable value="rand_norm(0,1)" symbol="Test_RN"/>
+    </Disabled>
+-->
+    </Global>
+    <CellTypes>
+        <CellType class="biological" name="amoeba">
+            <VolumeConstraint strength="1" target="target_vol"/>
+            <Property value="rand_norm(0,pi)" symbol="angle"/>
+            <!--    <Disabled>
+        <Variable value="rand_norm(0,pi)" symbol="angle"/>
+    </Disabled>
+-->
+            <Constant value="pi/3" symbol="D"/>
+            <Constant value="0.95" symbol="phi"/>
+            <ConnectivityConstraint/>
+            <!--    <Disabled>
+        <Property value="rand_norm(0,pi)" symbol="angle"/>
+    </Disabled>
+-->
+            <PropertyVector value="rand_norm(0,1), rand_norm(0,1), 0" symbol="move_dir"/>
+            <DirectedMotion strength="0.2" direction="move_dir"/>
+            <Function symbol="Test_RN">
+                <Expression>rand_norm(0,1)</Expression>
+            </Function>
+            <Event time-step="1.0" trigger="when true">
+                <Condition>Test_RN >= 1.5 </Condition>
+                <!--    <Disabled>
+        <Rule symbol-ref="angle">
+            <Expression>phi*angle + D*rand_norm(0,1)</Expression>
+        </Rule>
+    </Disabled>
+-->
+                <VectorRule symbol-ref="move_dir" notation="φ,θ,r">
+                    <Expression>angle, 0, 2</Expression>
+                </VectorRule>
+                <Rule symbol-ref="angle">
+                    <Expression>Test_RN</Expression>
+                </Rule>
+            </Event>
+        </CellType>
+        <CellType class="medium" name="medium"/>
+    </CellTypes>
+    <CPM>
+        <Interaction>
+            <Contact value="4.0" type1="amoeba" type2="medium"/>
+        </Interaction>
+        <ShapeSurface scaling="norm">
+            <Neighborhood>
+                <!--    <Disabled>
+        <Order>1</Order>
+    </Disabled>
+-->
+                <Distance>2.5</Distance>
+            </Neighborhood>
+        </ShapeSurface>
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1"/>
+            <MetropolisKinetics temperature="0.6"/>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+        </MonteCarloSampler>
+    </CPM>
+    <CellPopulations>
+        <Population type="amoeba" size="0">
+            <InitCellObjects mode="distance">
+                <Arrangement displacements="1, 1, 1" repetitions="1, 1, 1">
+                    <Sphere radius="sqrt(target_vol/pi)" center="200.0, 200.0, 0.0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+    </CellPopulations>
+</MorpheusModel>

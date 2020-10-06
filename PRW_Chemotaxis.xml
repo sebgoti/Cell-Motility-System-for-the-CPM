@@ -1,0 +1,183 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="4">
+    <Description>
+        <Title>Example-RunAndTumble</Title>
+        <Details>Models a Levy walk - a random walk strategy that is superior for searching due to it's high spatial coverage.
+
+Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An expression for each of the three coordinates must be given, separated by a comma ",".</Details>
+    </Description>
+    <Global>
+        <!--    <Disabled>
+        <Variable symbol="angle" value="0.0"/>
+    </Disabled>
+-->
+        <Constant symbol="dummy" value="0.0"/>
+        <Constant symbol="target_vol" value="256.0"/>
+        <!--    <Disabled>
+        <Event trigger="when true" time-step="1.0">
+            <Rule symbol-ref="Test_RN">
+                <Expression>rand_norm(0,1)</Expression>
+            </Rule>
+        </Event>
+    </Disabled>
+-->
+        <Constant symbol="cell_radii" value="sqrt(target_vol/pi)"/>
+        <!--    <Disabled>
+        <Field symbol="U" value="(space.x)^2+(space.y)^2" name="chemoatractant">
+            <Diffusion rate="0.1"/>
+        </Field>
+    </Disabled>
+-->
+    </Global>
+    <Space>
+        <Lattice class="hexagonal">
+            <Size symbol="size" value="512 512 0"/>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <BoundaryConditions>
+                <Condition boundary="x" type="periodic"/>
+                <Condition boundary="y" type="periodic"/>
+            </BoundaryConditions>
+        </Lattice>
+        <SpaceSymbol symbol="l"/>
+    </Space>
+    <Time>
+        <StartTime value="1"/>
+        <StopTime value="10100"/>
+        <TimeSymbol symbol="time"/>
+        <!--    <Disabled>
+        <SaveInterval symbol="checkpoint" value="100"/>
+    </Disabled>
+-->
+    </Time>
+    <CellTypes>
+        <CellType class="biological" name="amoeba">
+            <VolumeConstraint target="pi*(sqrt(target_vol)/2)^2" strength="1"/>
+            <SurfaceConstraint target="pi*sqrt(target_vol)" mode="surface" strength="0.2"/>
+            <!--    <Disabled>
+        <Property symbol="c" value="0" name="Chemotactic strength"/>
+    </Disabled>
+-->
+            <!--    <Disabled>
+        <Chemotaxis field="U" strength="c"/>
+    </Disabled>
+-->
+            <Constant symbol="persistance" value="1/5"/>
+            <Constant symbol="D" value="pi/3"/>
+            <Constant symbol="change_prob" value="rand_gamma(0,1)"/>
+            <Constant symbol="phi" value="0.95"/>
+            <Property symbol="theta" value="0.0"/>
+            <ConnectivityConstraint/>
+            <Property symbol="angle" value="rand_norm(0,pi)"/>
+            <PropertyVector symbol="move_dir" value="0, 0, 0"/>
+            <DirectedMotion direction="move_dir" strength="0.4"/>
+            <!--    <Disabled>
+        <Function symbol="Test_RN">
+            <Expression>rand_norm(0,1)</Expression>
+        </Function>
+    </Disabled>
+-->
+            <Event trigger="when true" time-step="1">
+                <Condition>(abs(rand_norm(0,1)) >= 1.645) and (time>100)</Condition>
+                <!--    <Disabled>
+        <Rule symbol-ref="angle">
+            <Expression>Test_RN</Expression>
+        </Rule>
+    </Disabled>
+-->
+                <Rule symbol-ref="angle">
+                    <Expression>0.3*angle + D*rand_norm(0,1)</Expression>
+                </Rule>
+                <VectorRule symbol-ref="move_dir">
+                    <Expression>cos(angle), sin(angle), 0.0</Expression>
+                </VectorRule>
+            </Event>
+            <!--    <Disabled>
+        <Variable symbol="Test_RN" value="rand_norm(0,1)"/>
+    </Disabled>
+-->
+            <!--    <Disabled>
+        <Property symbol="Test_RN" value="rand_norm(0,1)"/>
+    </Disabled>
+-->
+        </CellType>
+        <CellType class="medium" name="medium"/>
+    </CellTypes>
+    <CPM>
+        <Interaction>
+            <Contact type1="amoeba" type2="medium" value="0.01"/>
+        </Interaction>
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1"/>
+            <Neighborhood>
+                <Order>4</Order>
+            </Neighborhood>
+            <MetropolisKinetics temperature="80"/>
+        </MonteCarloSampler>
+        <ShapeSurface scaling="norm">
+            <Neighborhood>
+                <Distance>2.5</Distance>
+            </Neighborhood>
+        </ShapeSurface>
+    </CPM>
+    <CellPopulations>
+        <Population size="0" type="amoeba">
+            <!--    <Disabled>
+        <InitCircle mode="random" number-of-cells="1">
+            <Dimensions radius="10.0" center="200.0, 200.0, 0.0"/>
+        </InitCircle>
+    </Disabled>
+-->
+            <!--    <Disabled>
+        <InitProperty symbol-ref="cell.volume">
+            <Expression>50.0</Expression>
+        </InitProperty>
+    </Disabled>
+-->
+            <InitCellObjects mode="distance">
+                <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
+                    <Sphere radius="cell_radii" center="256, 256, 0.0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+    </CellPopulations>
+    <Analysis>
+        <Gnuplotter time-step="1000" decorate="false">
+            <Terminal name="png"/>
+            <Plot>
+                <Cells min="0.0">
+                    <ColorMap>
+                        <Color value="0" color="red"/>
+                        <Color value="2" color="blue"/>
+                    </ColorMap>
+                </Cells>
+                <CellArrows orientation="5 * move_dir"/>
+            </Plot>
+        </Gnuplotter>
+        <Logger time-step="1">
+            <Input>
+                <Symbol symbol-ref="size.x"/>
+                <Symbol symbol-ref="cell.center.x"/>
+                <Symbol symbol-ref="cell.center.y"/>
+                <Symbol symbol-ref="angle"/>
+                <Symbol symbol-ref="cell_radii"/>
+            </Input>
+            <Output>
+                <TextOutput/>
+            </Output>
+            <Plots>
+                <Plot time-step="5000">
+                    <Style style="lines" line-width="2.0"/>
+                    <Terminal terminal="png"/>
+                    <X-axis>
+                        <Symbol symbol-ref="time"/>
+                    </X-axis>
+                    <Y-axis>
+                        <Symbol symbol-ref="angle"/>
+                    </Y-axis>
+                </Plot>
+            </Plots>
+        </Logger>
+    </Analysis>
+</MorpheusModel>

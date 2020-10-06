@@ -1,0 +1,437 @@
+<MorpheusModel version="4">
+    <Description>
+        <Title>Example-CellPolarity</Title>
+        <Details>Chemotaxis of polarized cell&#xd;&#xd;
+----------------------------&#xd;&#xd;
+Show feedback between cell motility, cell polarization and external gradient.&#xd;&#xd;
+ &#xd;&#xd;
+Two simple polarization models can be enabled/disabled:&#xd;&#xd;
+- Substrate-depletion model: no repolarization&#xd;&#xd;
+- Wave-pinning model: repolarization&#xd;&#xd;
+ &#xd;&#xd;
+PDE Equation:&#xd;&#xd;
+- Switch on/off and change gradients </Details>
+    </Description>
+    <Global>
+        <Constant symbol="n" value="1"/>
+        <Constant symbol="period" value="pi"/>
+        <Constant symbol="osc" value="pi"/>
+        <Variable symbol="m_switch" value="1"/>
+        <Variable symbol="switching_time" value="0.0"/>
+        <!--    <Disabled>
+        <Constant symbol="switching_time" value="0.0"/>
+    </Disabled>
+-->
+        <!--    <Disabled>
+        <Event trigger="on change" time-step="1.0">
+            <Condition>center_cell1 > 0.9*lattice.x</Condition>
+            <Rule symbol-ref="c">
+                <Expression>-1*l.x/lattice.x+1+rand_uni(0,0.1)+sin(2*pi*t/osc)</Expression>
+            </Rule>
+        </Event>
+    </Disabled>
+-->
+        <Field symbol="c" value="0.01 * rand_uni(0,1)" name="Gradient Field">
+            <Diffusion rate="0"/>
+        </Field>
+        <!--    <Disabled>
+        <Event trigger="on change">
+            <Condition>t > 800</Condition>
+            <Rule symbol-ref="c">
+                <Expression>-1*l.x/lattice.x+1+rand_uni(0,0.1)+sin(2*pi*t/osc)</Expression>
+            </Rule>
+        </Event>
+    </Disabled>
+-->
+        <Variable symbol="center_cell1" value="0.0"/>
+        <Mapper>
+            <Input value="cell.center.x * (cell.id==1)"/>
+            <Output symbol-ref="center_cell1" mapping="maximum"/>
+        </Mapper>
+        <!--    <Disabled>
+        <Event trigger="on change" time-step="1.0">
+            <Condition>center_cell1 &lt; 0.1*lattice.x</Condition>
+            <Rule symbol-ref="c">
+                <Expression>1*l.x/lattice.x+1+rand_uni(0,0.1)+sin(2*pi*t/osc)</Expression>
+            </Rule>
+        </Event>
+    </Disabled>
+-->
+    </Global>
+    <Space>
+        <Lattice class="square">
+            <Size symbol="lattice" value="500, 500, 0"/>
+            <BoundaryConditions>
+                <Condition boundary="x" type="periodic"/>
+                <Condition boundary="y" type="periodic"/>
+            </BoundaryConditions>
+            <NodeLength value="1.0"/>
+            <Neighborhood>
+                <!--    <Disabled>
+        <Distance>2.0</Distance>
+    </Disabled>
+-->
+                <Order>2</Order>
+            </Neighborhood>
+        </Lattice>
+        <SpaceSymbol symbol="l"/>
+        <MembraneLattice>
+            <Resolution symbol="memsize" value="50"/>
+            <SpaceSymbol symbol="m"/>
+        </MembraneLattice>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="2000"/>
+        <SaveInterval value="0"/>
+        <RandomSeed value="0"/>
+        <TimeSymbol symbol="t"/>
+    </Time>
+    <CellTypes>
+        <!--    <Disabled>
+        <CellType class="biological" name="cells">
+            <VolumeConstraint target="500" strength="0.1"/>
+            <SurfaceConstraint target="1" mode="aspherity" strength="0.5"/>
+            <ConnectivityConstraint/>
+            <MembraneProperty symbol="A" value="0.5" name="A">
+                <Diffusion rate="0.1"/>
+            </MembraneProperty>
+            <MembraneProperty symbol="B" value="0.5" name="B">
+                <Diffusion rate="10"/>
+            </MembraneProperty>
+            <MembraneProperty symbol="s_WP" value="0" name="signal">
+                <Diffusion rate="0"/>
+            </MembraneProperty>
+            <Property symbol="l_c" value="0"/>
+            <System solver="runge-kutta" time-step="1.0" name="WavePinning">
+                <Constant symbol="k_0" value="0.067"/>
+                <Constant symbol="gamma" value="1"/>
+                <Constant symbol="delta" value="0.25"/>
+                <Constant symbol="K" value="1"/>
+                <Constant symbol="sigma" value="5.0" name="spatial-length-signal"/>
+                <Constant symbol="n" value="2" name="Hill coefficient"/>
+                <Intermediate symbol="F" value="F = B*(k_0 + s_WP + (gamma*A^n) / (K^n + A^n) ) - delta*A&#xa;&#xa;"/>
+                <DiffEqn symbol-ref="A">
+                    <Expression>F</Expression>
+                </DiffEqn>
+                <DiffEqn symbol-ref="B">
+                    <Expression>-F</Expression>
+                </DiffEqn>
+                <Disabled>
+                    <Rule symbol-ref="s">
+                        <Expression>c_mean</Expression>
+                    </Rule>
+                </Disabled>
+            </System>
+            <Mapper name="copy c(x,y,z) to s_WP(x,y,z)">
+                <Input value="c"/>
+                <Output symbol-ref="s_WP"/>
+            </Mapper>
+            <PropertyVector symbol="move_dir" value="0.0, 0.0, 0.0"/>
+            <Disabled>
+                <DirectedMotion direction="move_dir" strength="0.2"/>
+            </Disabled>
+            <Mapper>
+                <Input value="A"/>
+                <Polarity symbol-ref="move_dir"/>
+            </Mapper>
+            <DirectedMotion direction="move_dir" strength="0.2"/>
+            <Disabled>
+                <Property symbol="m_switch" value="1.0"/>
+            </Disabled>
+            <Disabled>
+                <System solver="adaptive45">
+                    <Rule symbol-ref="m_switch">
+                        <Expression>if(cell.center.x > 0.5*lattice.x,-1,1)</Expression>
+                    </Rule>
+                </System>
+            </Disabled>
+        </CellType>
+    </Disabled>
+-->
+        <CellType class="medium" name="medium">
+            <Property symbol="l_c" value="0"/>
+        </CellType>
+        <CellType class="biological" name="cell2">
+            <VolumeConstraint target="500" strength=".1"/>
+            <SurfaceConstraint target="1" mode="aspherity" strength=".5"/>
+            <ConnectivityConstraint/>
+            <MembraneProperty symbol="u_2" value="0.5" name="Activator Concentration - Otsuji">
+                <Diffusion rate="0.1"/>
+            </MembraneProperty>
+            <MembraneProperty symbol="v_2" value="0.5">
+                <Diffusion rate="10"/>
+            </MembraneProperty>
+            <MembraneProperty symbol="s_2" value="0.0">
+                <Diffusion rate="0"/>
+            </MembraneProperty>
+            <System solver="runge-kutta" time-step="0.1" name="Otsuji model">
+                <Constant symbol="a1" value="25"/>
+                <Constant symbol="a2" value="0.7"/>
+                <!--    <Disabled>
+        <Constant symbol="u_v_concentration" value="u_2 + v_2"/>
+    </Disabled>
+-->
+                <Constant symbol="s_OT" value="1.0"/>
+                <Intermediate symbol="F_2" value="a1*(v_2 + s_2 + (u_2 + v_2)/(a2*s_OT*(u_2 + v_2)+1)^2)"/>
+                <DiffEqn symbol-ref="u_2">
+                    <Expression>F_2</Expression>
+                </DiffEqn>
+                <DiffEqn symbol-ref="v_2">
+                    <Expression>-F_2</Expression>
+                </DiffEqn>
+            </System>
+            <Mapper name="copy c(x,y,z) to s_2(x,y,z)">
+                <Input value="c"/>
+                <Output symbol-ref="s_2"/>
+            </Mapper>
+            <PropertyVector symbol="move_dir_2" value="0.0, 0.0, 0.0"/>
+            <Mapper>
+                <Input value="u_2"/>
+                <Polarity symbol-ref="move_dir_2"/>
+            </Mapper>
+            <DirectedMotion direction="move_dir_2" strength="0.01"/>
+        </CellType>
+        <!--    <Disabled>
+        <CellType class="biological" name="cell3">
+            <VolumeConstraint target="500" strength=".1"/>
+            <SurfaceConstraint target="1" mode="aspherity" strength=".5"/>
+            <ConnectivityConstraint/>
+            <MembraneProperty symbol="u_3" value="1.0">
+                <Diffusion rate="0.0025"/>
+            </MembraneProperty>
+            <MembraneProperty symbol="v_3" value="1.0">
+                <Diffusion rate="10"/>
+            </MembraneProperty>
+            <MembraneProperty symbol="s_3" value="0.0">
+                <Diffusion rate="0"/>
+            </MembraneProperty>
+            <System solver="runge-kutta" time-step="1.0" name="Goryachev model">
+                <Constant symbol="alfa" value="0.33/101"/>
+                <Constant symbol="beta" value="0.67/101"/>
+                <Constant symbol="gamma" value="0.01733"/>
+                <Intermediate symbol="F_3" value="s_3 + alfa*u_3^2*v_3 + beta*u_3*v_3-gamma*u_3 "/>
+                <DiffEqn symbol-ref="u_3">
+                    <Expression>F_3</Expression>
+                </DiffEqn>
+                <DiffEqn symbol-ref="v_3">
+                    <Expression>-F_3</Expression>
+                </DiffEqn>
+                <Disabled>
+                    <Rule symbol-ref="u_v_concentration">
+                        <Expression>2</Expression>
+                    </Rule>
+                </Disabled>
+            </System>
+            <Mapper name="copy c(x,y,z) to s_3(x,y,z)">
+                <Input value="c"/>
+                <Output symbol-ref="s_3"/>
+            </Mapper>
+            <PropertyVector symbol="move_dir_3" value="0.0, 0.0, 0.0"/>
+            <Mapper>
+                <Input value="u_3"/>
+                <Polarity symbol-ref="move_dir_3"/>
+            </Mapper>
+            <DirectedMotion direction="move_dir_3" strength="0.2"/>
+        </CellType>
+    </Disabled>
+-->
+        <!--    <Disabled>
+        <CellType class="biological" name="cell4">
+            <VolumeConstraint target="500" strength="0.1"/>
+            <SurfaceConstraint target="1" mode="aspherity" strength="0.5"/>
+            <MembraneProperty symbol="c_a" value="0.5" name="activator concentration">
+                <Diffusion rate="0"/>
+            </MembraneProperty>
+            <MembraneProperty symbol="c_i1" value="0.5" name="Inhibitor1 concentration">
+                <Diffusion rate="0" well-mixed="true"/>
+            </MembraneProperty>
+            <MembraneProperty symbol="c_i2" value="0.5" name="Inhibitor2 concentration">
+                <Diffusion rate="0.00001"/>
+            </MembraneProperty>
+            <Property symbol="mean_c_a" value="0.0" name="average c_a at cell"/>
+            <PropertyVector symbol="move_dir" value="0.0, 0.0, 0.0"/>
+            <PropertyVector symbol="cellPolarity_vect" value="0.0, 0.0, 0.0"/>
+            <Mapper>
+                <Input value="c_a"/>
+                <Output symbol-ref="mean_c_a" mapping="average"/>
+                <Polarity symbol-ref="cellPolarity_vect"/>
+            </Mapper>
+            <System solver="runge-kutta" time-step="1.0" name="1 Activator 2 Inhibitor">
+                <Constant symbol="r_a" value="0.02" name="decay rate of the activator a"/>
+                <Constant symbol="b_a" value=".1" name="rate of the activator autocatalysis"/>
+                <Constant symbol="s_a" value="0.005" name="saturation of the actovator autocatalysis"/>
+                <Constant symbol="r_i1" value="0.03" name="decay rate of inhibitor i1"/>
+                <Constant symbol="b_i2" value="0.005" name="production rate of the inhibitor i2"/>
+                <Constant symbol="r_i2" value="0.013" name="decay rate of inhibitor i2"/>
+                <Constant symbol="s_c" value="0.2" name="Michaelis Menten Constant"/>
+                <Constant symbol="dy" value="0.02" name="external asymmetry"/>
+                <Constant symbol="dr" value="0.01" name="random fluctuation"/>
+                <DiffEqn symbol-ref="c_a">
+                    <Expression>s*0.02*(c_a^2/c_i1+b_a)/(s_c+c_i2)/(1+s_a*c_a^2) - r_a*c_a</Expression>
+                </DiffEqn>
+                <DiffEqn symbol-ref="c_i1">
+                    <Expression>r_i1*mean_c_a*-r_i1*c_i1</Expression>
+                </DiffEqn>
+                <DiffEqn symbol-ref="c_i2">
+                    <Expression>b_i2*c_a-r_i2*c_i2</Expression>
+                </DiffEqn>
+                <Intermediate symbol="mean_c_a" value="mean_c_a"/>
+            </System>
+            <Mapper>
+                <Input value="c_a"/>
+                <Polarity symbol-ref="move_dir"/>
+            </Mapper>
+            <DirectedMotion direction="move_dir" strength="0.5"/>
+            <Mapper name="copy c(x,y,z) to s(x,y,z)">
+                <Input value="c"/>
+                <Output symbol-ref="s"/>
+            </Mapper>
+            <MembraneProperty symbol="s" value="0" name="signal">
+                <Diffusion rate="0"/>
+            </MembraneProperty>
+            <Disabled>
+                <ConnectivityConstraint/>
+            </Disabled>
+        </CellType>
+    </Disabled>
+-->
+    </CellTypes>
+    <CPM>
+        <Interaction default="0.0">
+            <Contact type1="cell2" type2="medium" value="-10"/>
+            <Contact type1="cell2" type2="cell2" value="-20"/>
+        </Interaction>
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1"/>
+            <Neighborhood>
+                <Order>2</Order>
+            </Neighborhood>
+            <MetropolisKinetics temperature="1" yield="0.05"/>
+        </MonteCarloSampler>
+        <ShapeSurface scaling="norm">
+            <Neighborhood>
+                <Order>6</Order>
+            </Neighborhood>
+        </ShapeSurface>
+    </CPM>
+    <CellPopulations>
+        <!--    <Disabled>
+        <Population size="0" type="cells">
+            <Disabled>
+                <InitRectangle mode="regular" number-of-cells="1">
+                    <Dimensions size="150, 75, 50" origin="0.0, 0.0, 0.0"/>
+                </InitRectangle>
+            </Disabled>
+            <Cell id="1" name="1">
+                <Nodes>25 170 0</Nodes>
+            </Cell>
+        </Population>
+    </Disabled>
+-->
+        <Population size="1" type="cell2">
+            <Cell id="2" name="cell2">
+                <!--    <Disabled>
+        <Nodes>25 100 0</Nodes>
+    </Disabled>
+-->
+            </Cell>
+            <InitCircle mode="regular" number-of-cells="1">
+                <Dimensions radius="20.0" center="lattice.x/2, lattice.y/2, 0.0"/>
+            </InitCircle>
+        </Population>
+        <!--    <Disabled>
+        <Population size="1" type="cell3">
+            <Cell id="3" name="cell3">
+                <Nodes>25 40 0</Nodes>
+            </Cell>
+        </Population>
+    </Disabled>
+-->
+        <!--    <Disabled>
+        <Population size="1" type="cell4">
+            <Cell id="4">
+                <Nodes>25 250 0</Nodes>
+            </Cell>
+        </Population>
+    </Disabled>
+-->
+    </CellPopulations>
+    <Analysis>
+        <Gnuplotter time-step="10">
+            <Terminal name="png"/>
+            <Plot>
+                <Field symbol-ref="c"/>
+                <!--    <Disabled>
+        <Cells value="A"/>
+    </Disabled>
+-->
+                <Cells value="u_2"/>
+                <!--    <Disabled>
+        <Cells/>
+    </Disabled>
+-->
+                <!--    <Disabled>
+        <Cells value="u_3"/>
+    </Disabled>
+-->
+            </Plot>
+        </Gnuplotter>
+        <!--    <Disabled>
+        <TiffPlotter time-step="100" format="8bit" OME-header="false">
+            <Channel celltype="cells" symbol-ref="cell.id"/>
+            <Channel celltype="cells" symbol-ref="c"/>
+            <Channel symbol-ref="c"/>
+        </TiffPlotter>
+    </Disabled>
+-->
+        <Logger time-step="50">
+            <Input>
+                <!--    <Disabled>
+        <Symbol symbol-ref="A"/>
+    </Disabled>
+-->
+                <!--    <Disabled>
+        <Symbol symbol-ref="m.abs"/>
+    </Disabled>
+-->
+                <!--    <Disabled>
+        <Symbol symbol-ref="m_switch"/>
+    </Disabled>
+-->
+                <Symbol symbol-ref="cell.center.x"/>
+                <!--    <Disabled>
+        <Symbol symbol-ref="center_cell1"/>
+    </Disabled>
+-->
+                <!--    <Disabled>
+        <Symbol symbol-ref="u_2"/>
+    </Disabled>
+-->
+                <Symbol symbol-ref="cell.center.y"/>
+                <Symbol symbol-ref="cell.center.phi"/>
+            </Input>
+            <Output>
+                <TextOutput/>
+            </Output>
+            <!--    <Disabled>
+        <Plots>
+            <SurfacePlot time-step="50">
+                <Color-bar>
+                    <Symbol symbol-ref="A"/>
+                </Color-bar>
+                <Terminal terminal="png"/>
+            </SurfacePlot>
+        </Plots>
+    </Disabled>
+-->
+            <!--    <Disabled>
+        <Restriction>
+            <Celltype celltype="cells"/>
+        </Restriction>
+    </Disabled>
+-->
+        </Logger>
+        <DependencyGraph reduced="false" format="svg"/>
+    </Analysis>
+</MorpheusModel>
