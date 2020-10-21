@@ -1,0 +1,195 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="4">
+    <Description>
+        <Title>PRW extended with LevyWalk spontaneous repolarization</Title>
+        <Details></Details>
+    </Description>
+    <Global>
+        <!--    <Disabled>
+        <Variable value="0.0" symbol="angle"/>
+    </Disabled>
+-->
+        <Constant symbol="dummy" value="0.0"/>
+        <Constant symbol="target_vol" value="256"/>
+        <!--    <Disabled>
+        <Event time-step="1.0" trigger="when true">
+            <Rule symbol-ref="Test_RN">
+                <Expression>rand_norm(0,1)</Expression>
+            </Rule>
+            <Condition>0.0</Condition>
+        </Event>
+    </Disabled>
+-->
+        <Constant symbol="cell_radii" value="sqrt(target_vol/pi)"/>
+    </Global>
+    <Space>
+        <Lattice class="hexagonal">
+            <Size symbol="size" value="512, 512, 0"/>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <BoundaryConditions>
+                <Condition boundary="x" type="periodic"/>
+                <Condition boundary="y" type="periodic"/>
+            </BoundaryConditions>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+    </Space>
+    <Time>
+        <StartTime value="1"/>
+        <StopTime value="10100"/>
+        <TimeSymbol symbol="time"/>
+        <!--    <Disabled>
+        <SaveInterval value="100" symbol="checkpoint"/>
+    </Disabled>
+-->
+    </Time>
+    <CellTypes>
+        <CellType class="biological" name="amoeba">
+            <!--    <Disabled>
+        <Property symbol="RT_distribution" value="0.0"/>
+    </Disabled>
+-->
+            <Property symbol="RT_inst" value="0.0"/>
+            <VolumeConstraint target="pi*(sqrt(target_vol)/2)^2" strength="1"/>
+            <SurfaceConstraint target="pi*sqrt(target_vol)" mode="surface" strength="0.2"/>
+            <Constant symbol="persistance" value="1/5"/>
+            <Constant symbol="D" value="pi/3"/>
+            <Constant symbol="change_prob" value="rand_gamma(0,1)"/>
+            <Constant symbol="phi" value="0.95"/>
+            <Property symbol="theta" value="0.0"/>
+            <ConnectivityConstraint/>
+            <Property symbol="angle" value="rand_uni(0,2*pi)"/>
+            <PropertyVector symbol="move_dir" value="0, 0, 0"/>
+            <Constant symbol="tau" value="1.645"/>
+            <Constant symbol="tau_gamma" value="4"/>
+            <DirectedMotion direction="move_dir" strength="0.4"/>
+            <Event trigger="when true" time-step="10">
+                <!--    <Disabled>
+        <Intermediate symbol="RT_distribution" value="rand_gamma(1,2)"/>
+    </Disabled>
+-->
+                <Condition>(rand_gamma(1,2) >= tau_gamma) and (time>100)</Condition>
+                <Rule symbol-ref="angle">
+                    <Expression>rand_uni(0,2*pi)</Expression>
+                </Rule>
+                <Rule symbol-ref="RT_inst">
+                    <Expression>1 + RT_inst</Expression>
+                </Rule>
+                <!--    <Disabled>
+        <Intermediate symbol="" value="0.0"/>
+    </Disabled>
+-->
+                <!--    <Disabled>
+        <Function symbol="RT_instances">
+            <Expression>RT_inst + 1</Expression>
+        </Function>
+    </Disabled>
+-->
+            </Event>
+            <!--    <Disabled>
+        <Variable value="rand_norm(0,1)" symbol="Test_RN"/>
+    </Disabled>
+-->
+            <!--    <Disabled>
+        <Property value="rand_norm(0,1)" symbol="Test_RN"/>
+    </Disabled>
+-->
+            <Event trigger="when true" time-step="1.0">
+                <Condition>(abs(rand_norm(0,1)) >= tau) and (time>100)</Condition>
+                <Rule symbol-ref="angle">
+                    <Expression>phi*angle + D*rand_norm(0,1)</Expression>
+                </Rule>
+                <VectorRule symbol-ref="move_dir" spherical="true">
+                    <Expression>angle, 0.0, 1.0</Expression>
+                </VectorRule>
+            </Event>
+        </CellType>
+        <CellType class="medium" name="medium"/>
+    </CellTypes>
+    <CPM>
+        <Interaction>
+            <Contact type1="amoeba" type2="medium" value="0.01"/>
+        </Interaction>
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1"/>
+            <Neighborhood>
+                <Order>4</Order>
+            </Neighborhood>
+            <MetropolisKinetics temperature="2"/>
+        </MonteCarloSampler>
+        <ShapeSurface scaling="norm">
+            <Neighborhood>
+                <Distance>2.5</Distance>
+            </Neighborhood>
+        </ShapeSurface>
+    </CPM>
+    <CellPopulations>
+        <Population size="0" type="amoeba">
+            <!--    <Disabled>
+        <InitCircle number-of-cells="1" mode="random">
+            <Dimensions radius="10.0" center="200.0, 200.0, 0.0"/>
+        </InitCircle>
+    </Disabled>
+-->
+            <!--    <Disabled>
+        <InitProperty symbol-ref="cell.volume">
+            <Expression>50.0</Expression>
+        </InitProperty>
+    </Disabled>
+-->
+            <InitCellObjects mode="distance">
+                <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
+                    <Sphere radius="cell_radii" center="256, 256, 0.0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+    </CellPopulations>
+    <Analysis>
+        <Gnuplotter time-step="1000" decorate="false">
+            <Terminal name="png"/>
+            <Plot>
+                <Cells min="0.0">
+                    <ColorMap>
+                        <Color value="0" color="red"/>
+                        <Color value="2" color="blue"/>
+                    </ColorMap>
+                </Cells>
+                <CellArrows orientation="5 * move_dir"/>
+            </Plot>
+        </Gnuplotter>
+        <Logger time-step="1">
+            <Input>
+                <!--    <Disabled>
+        <Symbol symbol-ref="move_dir.x"/>
+    </Disabled>
+-->
+                <Symbol symbol-ref="cell.center.x"/>
+                <Symbol symbol-ref="cell.center.y"/>
+                <!--    <Disabled>
+        <Symbol symbol-ref="cell.center.phi"/>
+    </Disabled>
+-->
+                <Symbol symbol-ref="angle"/>
+                <Symbol symbol-ref="cell_radii"/>
+                <Symbol symbol-ref="RT_inst"/>
+            </Input>
+            <Output>
+                <TextOutput/>
+            </Output>
+            <Plots>
+                <Plot time-step="5000">
+                    <Style style="lines" line-width="2.0"/>
+                    <Terminal terminal="png"/>
+                    <X-axis>
+                        <Symbol symbol-ref="time"/>
+                    </X-axis>
+                    <Y-axis>
+                        <Symbol symbol-ref="angle"/>
+                    </Y-axis>
+                </Plot>
+            </Plots>
+        </Logger>
+        <DependencyGraph reduced="false" format="svg"/>
+    </Analysis>
+</MorpheusModel>
